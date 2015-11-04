@@ -83,8 +83,12 @@ def computeFullGraph(inputGraph):
 def computeGraphEdgeWeights(graph, weights):
     for i,j in graph.edges_iter():
         graph[i][j]['weight'] = 0.   # make sure it doesn't make its way into the dot product
-        # TODO: your code here
-        graph[i][j]['weight'] = something_you_need_to_compute
+        feats = {}
+        for key in graph[i][j]:
+            if key != 'weight':
+                feats[key] = graph[i][j][key]
+        w = weights.dotProduct(feats)
+        graph[i][j]['weight'] = w
 
         
 # once we have a graph with weights on the edges, we need to be able
@@ -116,13 +120,17 @@ def perceptronUpdate(weights, G, true, pred):
     # aren't in the true tree -- hint, use weights.update
     for i,j in pred.edges_iter():
         # TODO: your code here
-        pass
+        if not(true.has_edge(i,j)) and not(true.has_edge(j,i)):
+            weights.update(G[i][j],-1)
+        #pass
         
     # first, iterate over all the edges in the true tree that
     # aren't in the predicted tree -- hint, use weights.update
     for i,j in true.edges_iter():
         # TODO: your code here
-        pass
+        if not(pred.has_edge(i,j)) and not(pred.has_edge(j,i)):
+            weights.update(G[i][j],1)
+        #pass
     
 # now we can finally put it all together to make a single update on a
 # single example
@@ -132,7 +140,7 @@ def runOneExample(weights, trueGraph, quiet=False):
     computeGraphEdgeWeights(G, weights)
 
     # make a prediction
-    predGraph = 0 # TODO
+    predGraph = predictWeightedGraph(G) # TODO
 
     # compute the error
     err = numMistakes(trueGraph, predGraph)
@@ -146,18 +154,19 @@ def runOneExample(weights, trueGraph, quiet=False):
     
     # if necessary, make an update
     # TODO
-
+    if err != 0:
+        perceptronUpdate(weights,G,trueGraph,predGraph)
     return err
 
 
 # we can run this with:
 # >>> weights = Weights()
 # >>> runOneExample(weights, testGraph)
-# error = 6.0 	pred = ( *root* <-> the ) ( *root* <-> hairy ) ( *root* <-> monster ) ( *root* <-> ate ) ( *root* <-> tasty ) ( *root* <-> little ) ( *root* <-> children ) 
+# error = 6.0   pred = ( *root* <-> the ) ( *root* <-> hairy ) ( *root* <-> monster ) ( *root* <-> ate ) ( *root* <-> tasty ) ( *root* <-> little ) ( *root* <-> children ) 
 # >>> runOneExample(weights, testGraph)
-# error = 2.0 	pred = ( *root* <-> the ) ( the <-> monster ) ( hairy <-> monster ) ( hairy <-> children ) ( monster <-> ate ) ( tasty <-> children ) ( little <-> children ) 
+# error = 2.0   pred = ( *root* <-> the ) ( the <-> monster ) ( hairy <-> monster ) ( hairy <-> children ) ( monster <-> ate ) ( tasty <-> children ) ( little <-> children ) 
 # >>> runOneExample(weights, testGraph)
-# error = 0.0 	pred = ( *root* <-> ate ) ( the <-> monster ) ( hairy <-> monster ) ( monster <-> ate ) ( ate <-> children ) ( tasty <-> children ) ( little <-> children ) 
+# error = 0.0   pred = ( *root* <-> ate ) ( the <-> monster ) ( hairy <-> monster ) ( monster <-> ate ) ( ate <-> children ) ( tasty <-> children ) ( little <-> children ) 
 #
 # as you can see, the error keeps dropping and the tree gets better
 # and better
@@ -211,3 +220,13 @@ def iterCoNLL(filename):
     if G != None:
         yield G
     h.close()
+
+def main():
+    weights = Weights()
+    for iteration in range(5):
+        totalErr = 0
+        for G in iterCoNLL('en.tr100'): totalErr += runOneExample(weights, G, quiet=True)
+        print totalErr
+
+if __name__ == '__main__':
+    main()
