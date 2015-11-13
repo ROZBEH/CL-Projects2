@@ -2,9 +2,9 @@ import sys
 from collections import deque
 import random
 
-LEFT = 1
-RIGHT = 2
-SHIFT  = 3
+LEFT = "left"
+RIGHT = "right"
+SHIFT  = "shift"
 UNK = 4
 
 
@@ -106,32 +106,20 @@ def get_features(stack,queue):
 
     feats = Weights()
     #calculate features
-    if queue.isEmpty():
-        qword = ''
-        qid = ''
-        qpos = ''
+    if not queue.isEmpty():
+        feats[queue.getFirst().word] = 1
+        feats[queue.getFirst().ID] = 1
+        feats[queue.getFirst().pos] = 1
         
-    else:
-        qword = queue.getFirst().word
-        qid = queue.getFirst().ID
-        qpos= queue.getFirst().pos
+    if stack.getsize() > 1:
+        feats[stack.getFirst().word] = 1
+        feats[stack.getFirst().ID] = 1
+        feats[stack.getFirst().pos] = 1
 
-    if stack.getFirst() != None:
-        sid = stack.getFirst().ID
-        sword = stack.getFirst().word
-        spos = stack.getFirst().pos
+    if not queue.isEmpty() and stack.getsize() > 1:
+        feats[stack.getFirst().word+"+"+queue.getFirst().word] = 1
+        feats[stack.getFirst().pos+"+"+queue.getFirst().pos] = 1
 
-    else:
-        sid = ''
-        sword = ''
-        spos = ''
-
-    feats[sid] = 1
-    feats[qid] = 1
-    feats[spos] = 1
-    feats[qpos] = 1
-    feats[sword+"+"+qword] = 1
-    feats[spos +"+"+qpos] = 1
     return feats
 
 
@@ -153,12 +141,16 @@ def action(correct, queue, stack):
     if correct == SHIFT:
         stack.push(queue.deQueue())
     elif correct == RIGHT:
+            '''
             if stack.getSecond() != None:
                 stack.getSecond().unproc -= 1
+            '''
             stack.pop()
     else:
+        '''
         if stack.getFirst() != None:
             stack.getFirst().unproc -= 1
+        '''
         stack.pop_second()
 
 
@@ -218,6 +210,7 @@ def train_parser(sentence,w_s,w_l,w_r):
             if corr == SHIFT:
                 w_s.update(feats,1)
         #print w_s
+        print corr
         action(corr,queue,stack)
         
         #print corr
