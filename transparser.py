@@ -114,12 +114,12 @@ def get_features(stack,queue):
     else:
         qword = queue.getFirst().word
         qid = queue.getFirst().ID
-        qpos= queue.getFirst().pos1
+        qpos= queue.getFirst().pos
 
     if stack.getFirst() != None:
         sid = stack.getFirst().ID
         sword = stack.getFirst().word
-        spos = stack.getFirst().pos1
+        spos = stack.getFirst().pos
 
     else:
         sid = ''
@@ -131,7 +131,7 @@ def get_features(stack,queue):
     feats[spos] = 1
     feats[qpos] = 1
     feats[sword+"+"+qword] = 1
-    feats[qword +"+"+qpos] = 1
+    feats[spos +"+"+qpos] = 1
     return feats
 
 
@@ -140,10 +140,10 @@ def make_correct_action(stack, queue):
     if stack.getSecond() is None:
         return SHIFT
     
-    elif stack.getSecond().head == stack.getFirst().ID and stack.getSecond().unproc == 0:
+    elif stack.getSecond().head == stack.getFirst().ID:
         return LEFT
     
-    elif stack.getFirst().head == stack.getSecond().ID and stack.getFirst().unproc == 0:
+    elif stack.getFirst().head == stack.getSecond().ID:
         return RIGHT
     else:
         if queue.getsize() != 0:
@@ -187,6 +187,7 @@ def train_parser(sentence,w_s,w_l,w_r):
     while not queue.isEmpty() or stack.hasOverTwo():
         #TODO this
         feats = get_features(stack,queue)
+
         s_s = w_s.dotProduct(feats)
         s_l = w_l.dotProduct(feats)
         s_r = w_r.dotProduct(feats)
@@ -216,6 +217,7 @@ def train_parser(sentence,w_s,w_l,w_r):
                 w_r.update(feats,1)
             if corr == SHIFT:
                 w_s.update(feats,1)
+        #print w_s
         action(corr,queue,stack)
         
         #print corr
@@ -288,13 +290,13 @@ def main(train,test,out):
     w_r = Weights()
     w_s = Weights()
     sentences = read_conll(train)
-    for i in range(0,30):
+    for i in range(0,100):
         random.shuffle(sentences)
         for sentence in sentences:
             train_parser(sentence,w_s,w_l,w_r)
             #print "==========================="
     #train(sentences)
-        print "===========================" 
+        
     test_sentences = read_conll(test)
     f_out = open(out,"w")
     for sentence in test_sentences:
