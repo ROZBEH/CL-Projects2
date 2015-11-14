@@ -43,6 +43,9 @@ class Queue:
     def __init__(self):
         self._l = list()
 
+    def __iter__(self):
+        return iter(self._l)
+
     def getsize(self):
         return len(self._l)
 
@@ -132,6 +135,9 @@ def make_correct_action(stack, queue):
         return LEFT
     
     elif stack.getFirst().head == stack.getSecond().ID:
+        for each in queue:
+            if each.ID == stack.getFirst().head:
+                return SHIFT
         return RIGHT
     else:
         if queue.getsize() != 0:
@@ -141,16 +147,12 @@ def action(correct, queue, stack):
     if correct == SHIFT:
         stack.push(queue.deQueue())
     elif correct == RIGHT:
-            '''
             if stack.getSecond() != None:
                 stack.getSecond().unproc -= 1
-            '''
             stack.pop()
     else:
-        '''
         if stack.getFirst() != None:
             stack.getFirst().unproc -= 1
-        '''
         stack.pop_second()
 
 
@@ -187,7 +189,7 @@ def train_parser(sentence,w_s,w_l,w_r):
         if s_s >= s_l and s_s >= s_r and not queue.isEmpty():
             ans = SHIFT
         else:
-            if s_l >= s_r:
+            if s_l >= s_r and stack.getsize() >= 2:
                 ans = LEFT
                
             else:
@@ -210,7 +212,6 @@ def train_parser(sentence,w_s,w_l,w_r):
             if corr == SHIFT:
                 w_s.update(feats,1)
         #print w_s
-        print corr
         action(corr,queue,stack)
         
         #print corr
@@ -282,19 +283,39 @@ def main(train,test,out):
     w_l = Weights()
     w_r = Weights()
     w_s = Weights()
+    w_l_avg = Weights()
+    w_r_avg = Weights()
+    w_s_avg = Weights()
     sentences = read_conll(train)
-    for i in range(0,100):
+    N = 150
+    for i in range(0,N):
         random.shuffle(sentences)
         for sentence in sentences:
             train_parser(sentence,w_s,w_l,w_r)
+            for feat,val in w_s.iteritems():
+                w_s_avg[feat] += val
+            for feat,val in w_r.iteritems():
+                w_r_avg[feat] += val
+            for feat,val in w_l.iteritems():
+                w_l_avg[feat] += val
             #print "==========================="
     #train(sentences)
+    T = len(sentences)
+
+    for feat,val in w_s_avg.iteritems():
+        w_s_avg[feat] = w_s_avg[feat]*1.0/N*T
+
+    for feat,val in w_l_avg.iteritems():
+        w_l_avg[feat] = w_l_avg[feat]*1.0/N*T
+
+    for feat,val in w_r_avg.iteritems():
+        w_r_avg[feat] = w_r_avg[feat]*1.0/N*T
         
     test_sentences = read_conll(test)
     f_out = open(out,"w")
     for sentence in test_sentences:
         #print sentence
-        evaluate(sentence,f_out,w_s,w_l,w_r)
+        evaluate(sentence,f_out,w_s_avg,w_l_avg,w_r_avg)
 
     
 if __name__ == '__main__':
