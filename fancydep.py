@@ -125,16 +125,20 @@ def get_features(stack,queue):
     if stack.getsize() > 1:
         #feats[stack.getFirst().word] = 1
         feats[stack.getFirst().ID] = 1
+        feats[stack.getSecond().ID] = 1
         feats[stack.getFirst().pos] = 1
+        feats[stack.getSecond().pos] = 1
         feats[stack.getSecond().word+stack.getFirst().word] = 1
         feats[stack.getSecond().word+stack.getFirst().pos] = 1
         feats[stack.getSecond().pos+stack.getFirst().word] = 1
         feats[stack.getSecond().pos+stack.getFirst().pos] = 1
+        feats[stack.getSecond().word+stack.getFirst().word+stack.getSecond().pos+stack.getFirst().pos] = 1
         
 
     if not queue.isEmpty() and stack.getsize() > 1:
         feats[stack.getFirst().word+queue.getFirst().word] = 1
         feats[stack.getFirst().pos+queue.getFirst().pos] = 1
+        feats[stack.getFirst().word+queue.getFirst().word+stack.getFirst().pos+queue.getFirst().pos] = 1
         #feats[stack.getFirst().pos1+"+"+queue.getFirst().pos1] = 1
 
     #print feats
